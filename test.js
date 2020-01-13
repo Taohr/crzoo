@@ -14,18 +14,18 @@ const Model = {
   m3:[[1,1,1]],
   m4:[[1,1,1,1]],
   m5:[[1,1,1,1,1]],
-  m22:[
-    [1,1],
-    [1,1]
-  ],
-  m221:[
-    [1,1,0],
-    [1,1,1]
-  ],
-  m222:[
-    [1,1,1],
-    [1,1,0]
-  ],
+  // m22:[
+  //   [1,1],
+  //   [1,1]
+  // ],
+  // m221:[
+  //   [1,1,0],
+  //   [1,1,1]
+  // ],
+  // m222:[
+  //   [1,1,1],
+  //   [1,1,0]
+  // ],
   mL:[
     [1,0,0],
     [1,0,0],
@@ -53,32 +53,31 @@ const Model = {
   ]
 }
 
-function createGrid(w, h) {
+function createGrid(w, h, num) {
   var tmp = []
   for (var r=0; r<h; r++) {
     var row = []
     tmp.push(row)
     for (var c=0; c<w; c++) {
-      row.push(0)
+      row.push(randblock(num))
     }
   }
   return tmp
 }
-
-// 1 2 3 
+grid = createGrid(6, 6, 3)
 grid = [
-  [2,1,1,2,3,2,3],
-  [3,1,1,2,3,3,3],
-  [2,1,3,3,2,2,3],
-  [1,2,2,2,3,3,3],
-  [2,1,2,2,3,3,2],
-  [2,1,3,3,2,2,3],
-  [1,2,2,2,3,3,3],
-  [2,1,2,2,3,3,2],
+  [3, 2, 2, 1, 2, 2],
+  [2, 2, 3, 2, 2, 2],
+  [2, 2, 3, 3, 3, 1],
+  [1, 1, 3, 3, 2, 3],
+  [3, 2, 3, 2, 2, 2],
+  [2, 1, 3, 1, 3, 1],
 ]
+tlog(grid)
+
 grid = grid.map((row,y)=>{
   return row.map((it,x)=>{
-    return {val:it, st:Status.ready, pos:{x:x,y:y}}
+    return {val:it, st:Status.ready, pos:{x:x,y:y}, oripos:{x:x,y:y}}
   })
 })
 // 行列格式输出矩阵
@@ -209,20 +208,6 @@ function offsets(grd, mdl) {
   return {h: h, v: v}
 }
 
-// // 判断网格里是否有匹配的
-// // 如果有，这部分不再检查
-// function hasmatched(grd, val) {
-//   for (var r in grd) {
-//     for (var c in grd[r]) {
-//       var item = grd[r][c]
-//       if (item == val && item.st == Status.matched) {
-//         return true
-//       }
-//     }
-//   }
-//   return false
-// }
-
 // 排重，统计出现的值，对应出现的方块种类
 function distinct(grd) {
   var dic = {}
@@ -265,28 +250,25 @@ function checkall(val) {
     }
     var h = model.length
     var w = model[0].length
-    var onematch = []
     for (var y=0; y<offset.v; y++) {
       for (var x=0; x<offset.h; x++) {
         // 逐个匹配看是否满足消除的形状
         var subb = sub(x,y,w,h)
-        // if (hasmatched(subb, val)) {
-        //   continue
-        // }
         var mch = compare(subb, model, val)
         if (!mch) {
           continue
         }
+        var onematch = []
         for (var i in mch) {
           var idx = mch[i]
           var item = get(idx.x, idx.y)
           onematch.push(item)
           item.st = Status.matched
         }
+        if (onematch.length > 0) {
+          matched.push(onematch)
+        }
       }
-    }
-    if (onematch.length > 0) {
-      matched.push(onematch)
     }
   }
   return matched
@@ -315,9 +297,107 @@ function logmatch(match, val) {
 
 var allval = distinct(grid)
 log(allval)
+var matches = []
 for (var i in allval) {
   var val = allval[i]
   var matched = checkall(val)
+  matches.push(matched)
   logmatch(matched, val)
 }
 
+// 随机方块值
+function randblock(max = 4) {
+  var val = parseInt(Math.random()*max) + 1
+  return val
+}
+
+function cleantouch() {
+  place1 = null
+  place2 = null
+}
+
+function getcore(match) {
+  if (place1 == null && place2 == null) {
+    // 非玩家操作
+    return match[0]
+  }
+  // 玩家操作
+  if (match[0].val == match[1].val && match[1].val == place1.val) {
+    return place1
+  }
+  else if (match[0].val == match[1].val && match[1].val == place2.val) {
+    return place2
+  }
+  return null
+}
+
+// 清理匹配的方块
+function clear(matches) {
+  for (var ig in matches) {
+    var group = matches[ig]
+    for (var im in group) {
+      var match = group[im]
+      clearonematch(match)
+    }
+  }
+}
+
+function clearonematch(match) {
+  var core = getcore(match)
+  for (var i in match) {
+    var item = match[i]
+    clearitem(item)
+  }
+}
+
+function clearitem(item) {
+  item.val = randblock()
+  item.st = Status.ready
+}
+
+clear(matches)
+
+var place1 = null
+var place2 = null
+// 点击方块，准备做识别处理
+function touch(item) {
+  var items = []
+  if (place1 == null) {
+    place1 = item
+  } else if (place1 == item) {
+    place1 = null
+  } else {
+    pos1 = place1.pos
+    pos2 = item.pos
+    var h = (pos1.y == pos2.y) && (Math.abs(pos1.x - pos2.x) == 1)
+    var v = (pos1.x == pos2.x) && (Math.abs(pos1.y - pos2.y) == 1)
+    if (h) {
+      place2 = item
+      items = [place1, place2]
+    } else if (v) {
+      place2 = item
+      items = [place1, place2]
+    }
+  }
+  return items
+}
+
+// log(touch(get(1,1)))
+// log(touch(get(1,2)))
+
+function exchange(a, b) {
+  // 交换方块
+  grid[a.pos.y][a.pos.x] = b
+  grid[b.pos.y][b.pos.x] = a
+  // 更新坐标
+  a.pos = b.oripos
+  b.pos = a.oripos
+}
+
+// exchange(get(1,0),get(1,2))
+// grid = grid.map((r)=>{
+//   return r.map((item)=>{
+//     return item.val
+//   })
+// })
+// tlog(grid)
