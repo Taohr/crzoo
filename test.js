@@ -1,4 +1,6 @@
 var grid = []
+var dirs = []// 格子补齐的方向，经典玩法是向下的
+var val_max = 4// 格子种类总数
 const Status = {
   empty:    0,//空白，等待填充新的方块
   filling:  1,//填充，初始化或消除后会填充
@@ -53,20 +55,49 @@ const Model = {
   ]
 }
 
-function createGrid(w, h, num) {
+function create_grid(w, h, num) {
   var tmp = []
   for (var r=0; r<h; r++) {
     var row = []
     tmp.push(row)
     for (var c=0; c<w; c++) {
-      row.push(randblock(num))
+      row.push(random_val(num))
+    }
+  }
+  tmp = tmp.map((row,y)=>{
+    return row.map((it,x)=>{
+      return box_block(it, x, y)
+    })
+  })
+  return tmp
+}
+
+function create_dirs(w, h) {
+  var tmp = []
+  for (var r=0; r<h; r++) {
+    var row = []
+    tmp.push(row)
+    for (var c=0; c<w; c++) {
+      var d = {
+        from: {x:0, y:-1},
+        to: {x:0, y:1}
+      }
+      if (r == 0) {//第一行没有from
+        d.from = null
+      }
+      if (r == h-1) {
+        d.to = null//最后一行没有to
+      }
+      row.push(d)
     }
   }
   return tmp
 }
-grid = createGrid(6, 6, 3)
+
+grid = create_grid(6, 6, 3)
+dirs = create_dirs(6, 6)
 grid = [
-  [3, 2, 2, 1, 2, 2],
+  [3, 2, 2, 1, 1, 1],
   [2, 2, 3, 2, 2, 2],
   [2, 2, 3, 3, 3, 1],
   [1, 1, 3, 3, 2, 3],
@@ -74,12 +105,35 @@ grid = [
   [2, 1, 3, 1, 3, 1],
 ]
 tlog(grid)
-
 grid = grid.map((row,y)=>{
   return row.map((it,x)=>{
-    return {val:it, st:Status.ready, pos:{x:x,y:y}, oripos:{x:x,y:y}}
+    return box_block(it, x, y)
   })
 })
+
+function log_grid(grd, key='val') {
+  var arr = []
+  for (var r in grd) {
+    var row = []
+    for (var c in grd[r]) {
+      var item = grd[r][c]
+      row.push(item[key])
+    }
+    arr.push(row)
+  }
+  log('---', key, '---')
+  tlog(arr)
+}
+
+function box_block(val, x, y) {
+  return {
+    val: val,
+    st: Status.ready,
+    pos: {x: x, y: y},
+    pow: 1
+  }
+}
+
 // 行列格式输出矩阵
 function tlog(t) {
   var s = t.map((row)=>{
@@ -225,17 +279,22 @@ function distinct(grd) {
 }
 
 // 准备所有的模板，包括旋转的变种
-var models = []
-for (var k in Model) {
-  var model = Model[k]
-  var rs = rots(model)
-  for (var r in rs) {
-    m = rotate(model, rs[r])
-    models.push(m)
+function get_all_models() {
+  var arr = []
+  for (var k in Model) {
+    var model = Model[k]
+    var rs = rots(model)
+    for (var r in rs) {
+      m = rotate(model, rs[r])
+      arr.push(m)
+    }
   }
+  // 大模板优先
+  arr.sort((a,b)=>{return msize(b)-msize(a)})
+  return arr
 }
-// 大模板优先
-models.sort((a,b)=>{return msize(b)-msize(a)})
+
+var models = get_all_models()
 
 // 初始化后，全部检测。此时不是玩家操作触发
 function checkall(val) {
@@ -306,17 +365,17 @@ for (var i in allval) {
 }
 
 // 随机方块值
-function randblock(max = 4) {
-  var val = parseInt(Math.random()*max) + 1
+function random_val() {
+  var val = parseInt(Math.random()*val_max) + 1
   return val
 }
 
-function cleantouch() {
+function clean_touch() {
   place1 = null
   place2 = null
 }
 
-function getcore(match) {
+function get_core(match) {
   if (place1 == null && place2 == null) {
     // 非玩家操作
     return match[0]
@@ -332,30 +391,31 @@ function getcore(match) {
 }
 
 // 清理匹配的方块
-function clear(matches) {
+function clear_match(matches) {
   for (var ig in matches) {
     var group = matches[ig]
     for (var im in group) {
       var match = group[im]
-      clearonematch(match)
+      clear_one_match(match)
     }
   }
 }
 
-function clearonematch(match) {
-  var core = getcore(match)
+function clear_one_match(match) {
+  var core = get_core(match)
+  // log('core', core, match.length)
   for (var i in match) {
     var item = match[i]
-    clearitem(item)
+    if (item == core) {
+      item.pow = match.length
+      item.st = Status.ready
+    } else {
+      item.val = 0
+      item.st = Status.empty
+      item.pow = 0
+    }
   }
 }
-
-function clearitem(item) {
-  item.val = randblock()
-  item.st = Status.ready
-}
-
-clear(matches)
 
 var place1 = null
 var place2 = null
@@ -389,9 +449,23 @@ function exchange(a, b) {
   // 交换方块
   grid[a.pos.y][a.pos.x] = b
   grid[b.pos.y][b.pos.x] = a
-  // 更新坐标
-  a.pos = b.oripos
-  b.pos = a.oripos
+  // 交换坐标
+  var tmpos = a.pos
+  a.pos = b.pos
+  b.pos = tmpos
+}
+
+function empty_block(x,y) {
+  return { val: 0, st: Status.empty, pos: {x: x, y: y} }
+}
+
+function move(item, pos) {
+  var x = item.pos.x
+  var y = item.pos.y
+  item.pos.x = pos.x
+  item.pos.y = pos.y
+  grid[pos.y][pos.x] = item
+  grid[y][x] = empty_block(x, y)
 }
 
 // exchange(get(1,0),get(1,2))
@@ -401,3 +475,62 @@ function exchange(a, b) {
 //   })
 // })
 // tlog(grid)
+
+clear_match(matches)
+log_grid(grid, 'val')
+// log_grid(grid, 'st')
+// log_grid(grid, 'pow')
+
+// 获取这里的来去走向
+function get_dir(item) {
+  var dir = dirs[item.pos.y][item.pos.x]
+  return dir
+}
+
+// 根据来去走向获取前后item
+function get_chain_item(item) {
+  var dir = get_dir(item)
+  var from = null
+  var to = null
+  if (dir.from != null) {
+    from = grid[item.pos.y+dir.from.y][item.pos.x+dir.from.x]
+  }
+  if (dir.to != null) {
+    to = grid[item.pos.y+dir.to.y][item.pos.x+dir.to.x]
+  }
+  return {from: from, to: to}
+}
+
+function fall_items() {
+  var empties = []
+  for (var y in grid) {
+    for (var x in grid[y]) {
+      var item = grid[y][x]
+      if (item.st == Status.empty) {
+        var chain = get_chain_item(item)
+        if (chain.from == null || chain.from.st != Status.empty) {
+          var prepos = get_dir(item)
+          var px = prepos.from?(x+prepos.from.x):null// 可能超出边界，但目前无碍
+          var py = prepos.from?(y+prepos.from.y):null
+          empties.push({
+            cur: item,
+            from: chain.from ? chain.from : box_block(random_val(), px, py)
+          })
+        }
+      }
+    }
+  }
+  log(empties)
+  if (empties.length == 0) {
+    return
+  }
+  for (var i in empties) {
+    var e = empties[i]
+    var dir = dirs[e.pos.y][e.pos.x]
+    var prepos = {x: e.pos.x + dir.from.x, y: e.pos.y + dir.from.y}
+
+  }
+}
+
+fall_items()
+
