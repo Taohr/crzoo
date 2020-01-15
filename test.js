@@ -1,6 +1,6 @@
 var grid = []
 var dirs = []// 格子补齐的方向，经典玩法是向下的
-var val_max = 4// 格子种类总数
+var val_max = 3// 格子种类总数
 const Status = {
   empty:    0,//空白，等待填充新的方块
   filling:  1,//填充，初始化或消除后会填充
@@ -94,7 +94,7 @@ function create_dirs(w, h) {
   return tmp
 }
 
-grid = create_grid(6, 6, 3)
+grid = create_grid(6, 6, val_max)
 dirs = create_dirs(6, 6)
 grid = [
   [3, 2, 2, 1, 1, 1],
@@ -476,11 +476,6 @@ function move(item, pos) {
 // })
 // tlog(grid)
 
-clear_match(matches)
-log_grid(grid, 'val')
-// log_grid(grid, 'st')
-// log_grid(grid, 'pow')
-
 // 获取这里的来去走向
 function get_dir(item) {
   var dir = dirs[item.pos.y][item.pos.x]
@@ -509,28 +504,53 @@ function fall_items() {
       if (item.st == Status.empty) {
         var chain = get_chain_item(item)
         if (chain.from == null || chain.from.st != Status.empty) {
-          var prepos = get_dir(item)
-          var px = prepos.from?(x+prepos.from.x):null// 可能超出边界，但目前无碍
-          var py = prepos.from?(y+prepos.from.y):null
           empties.push({
             cur: item,
-            from: chain.from ? chain.from : box_block(random_val(), px, py)
+            from: chain.from ? chain.from : null
           })
         }
       }
     }
   }
-  log(empties)
   if (empties.length == 0) {
-    return
+    return true
   }
   for (var i in empties) {
-    var e = empties[i]
-    var dir = dirs[e.pos.y][e.pos.x]
-    var prepos = {x: e.pos.x + dir.from.x, y: e.pos.y + dir.from.y}
-
+    var cur = empties[i].cur
+    var from = empties[i].from
+    if (from) {
+      exchange(cur, from)
+    } else {
+      var x = cur.pos.x
+      var y = cur.pos.y
+      var item = box_block(random_val(), x, y)
+      grid[y][x] = item
+    }
   }
+  return false
 }
 
-fall_items()
+// clear_match(matches)
+// log_grid(grid, 'val')
+// log_grid(grid, 'st')
+// log_grid(grid, 'pow')
+
+// do {
+//   var rt = fall_items()
+// }while(!rt)
+
+// log_grid(grid, 'pow')
+
+const color = [
+  [255, 0, 0],
+  [128,128,0],
+  [0,255,0],
+  [0,128,128],
+  [0,0,255]
+]
+
+function get_color(val) {
+  var c = color[val-1]
+  return 'rgb('+c[0]+','+c[1]+','+c[2]+')'
+}
 

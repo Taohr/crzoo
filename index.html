@@ -9,6 +9,7 @@
   <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
 
   <script type="text/javascript" src="./main.js"></script>
+  <script type="text/javascript" src="./test.js"></script>
   <link rel="stylesheet" type="text/css" href="./style.css">
 </head>
 <body onload="onload();">
@@ -18,7 +19,11 @@
     </div>
 
     <div class="grid">
-      
+      <div class="grid-row" v-for="row in griddata">
+        <div class="grid-item" v-for="item in row" :style="{backgroundColor: get_color(item.val)}">
+          {{item.pow==1 ? 'x' : item.pow}}
+        </div>
+      </div>
     </div>
   </div>
 </body>

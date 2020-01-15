@@ -32,7 +32,7 @@ function initVue() {
   var app = new Vue({
     el: '#main',
     data: {
-      griddata: {},
+      griddata: grid,
     },
     computed: {
     },
@@ -41,6 +41,9 @@ function initVue() {
         var data = JSON.stringify(this.griddata, null, '\t')
         localStorage.setItem(kLSData, data)
       },
+      get_color: function(val) {
+        return get_color(val)
+      }
     }
   })
   vue = app
