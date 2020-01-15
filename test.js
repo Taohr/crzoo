@@ -94,22 +94,24 @@ function create_dirs(w, h) {
   return tmp
 }
 
-grid = create_grid(6, 6, val_max)
-dirs = create_dirs(6, 6)
-grid = [
-  [3, 2, 2, 1, 1, 1],
-  [2, 2, 3, 2, 2, 2],
-  [2, 2, 3, 3, 3, 1],
-  [1, 1, 3, 3, 2, 3],
-  [3, 2, 3, 2, 2, 2],
-  [2, 1, 3, 1, 3, 1],
-]
-tlog(grid)
-grid = grid.map((row,y)=>{
-  return row.map((it,x)=>{
-    return box_block(it, x, y)
-  })
-})
+grid = create_grid(8, 8, val_max)
+dirs = create_dirs(8, 8)
+// grid = [
+// [3,1,3,3,2,1,4,2],
+// [3,1,3,2,4,1,4,1],
+// [2,3,3,1,4,3,4,4],
+// [3,3,3,1,2,4,4,2],
+// [1,4,3,4,1,2,4,4],
+// [2,2,1,2,4,3,3,3],
+// [2,1,1,1,1,1,2,3],
+// [2,1,1,1,1,2,2,2],
+// ]
+// grid = grid.map((row,y)=>{
+//   return row.map((it,x)=>{
+//     return box_block(it, x, y)
+//   })
+// })
+log_grid(grid, 'val')
 
 function log_grid(grd, key='val') {
   var arr = []
@@ -354,16 +356,6 @@ function logmatch(match, val) {
   tlog(arr)
 }
 
-var allval = distinct(grid)
-log(allval)
-var matches = []
-for (var i in allval) {
-  var val = allval[i]
-  var matched = checkall(val)
-  matches.push(matched)
-  logmatch(matched, val)
-}
-
 // 随机方块值
 function random_val() {
   var val = parseInt(Math.random()*val_max) + 1
@@ -437,6 +429,9 @@ function touch(item) {
     } else if (v) {
       place2 = item
       items = [place1, place2]
+    } else {
+      place1 = null
+      place2 = null
     }
   }
   return items
@@ -542,15 +537,47 @@ function fall_items() {
 // log_grid(grid, 'pow')
 
 const color = [
-  [255, 0, 0],
-  [128,128,0],
-  [0,255,0],
-  [0,128,128],
-  [0,0,255]
+  '#F22222',
+  '#FFD700',
+  '#228B22',
+  '#66CDAA',
+  '#1929A0',
+  '#9350DB',
 ]
 
 function get_color(val) {
-  var c = color[val-1]
-  return 'rgb('+c[0]+','+c[1]+','+c[2]+')'
+  if (val > color.length) {
+    return ''
+  }
+  return color[val-1]
 }
 
+function player_click(item) {
+  var touches = touch(item)
+  if (touches.length == 2) {
+    exchange(touches[0], touches[1])
+    place1 = null
+    place2 = null
+    return true
+  }
+  return false
+}
+
+
+function button_click() {
+  var allval = distinct(grid)
+  log(allval)
+  var matches = []
+  for (var i in allval) {
+    var val = allval[i]
+    var matched = checkall(val)
+    matches.push(matched)
+    logmatch(matched, val)
+  }
+
+  clear_match(matches)
+  do {
+    var rt = fall_items()
+  }while(!rt)
+  log_grid(grid, 'val')
+}

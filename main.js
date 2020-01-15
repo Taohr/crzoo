@@ -43,7 +43,19 @@ function initVue() {
       },
       get_color: function(val) {
         return get_color(val)
-      }
+      },
+      player_click: function(item) {
+        if (player_click(item)) {
+          this.refresh()
+        }
+      },
+      refresh: function() {
+        this.griddata = [...this.griddata]
+      },
+      button_click: function() {
+        button_click()
+        this.refresh()
+      },
     }
   })
   vue = app

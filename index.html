@@ -20,11 +20,16 @@
 
     <div class="grid">
       <div class="grid-row" v-for="row in griddata">
-        <div class="grid-item" v-for="item in row" :style="{backgroundColor: get_color(item.val)}">
-          {{item.pow==1 ? 'x' : item.pow}}
+        <div class="grid-item" v-for="item in row" :style="{backgroundColor: get_color(item.val)}" @click="player_click(item)">
+          <!-- {{item.pow==1 ? 'x' : item.pow}} -->
+          {{item.st}}
         </div>
       </div>
     </div>
+  </div>
+  <!-- control -->
+  <div >
+    <div style="background-color: white;" onclick="button_click()">click</div>
   </div>
 </body>
 </html>
