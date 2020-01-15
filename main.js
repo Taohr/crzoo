@@ -50,7 +50,7 @@ function initVue() {
         }
       },
       refresh: function() {
-        this.griddata = [...this.griddata]
+        this.griddata = [...grid]
       },
       button_click: function() {
         button_click()

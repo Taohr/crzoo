@@ -96,21 +96,21 @@ function create_dirs(w, h) {
 
 grid = create_grid(8, 8, val_max)
 dirs = create_dirs(8, 8)
-// grid = [
-// [3,1,3,3,2,1,4,2],
-// [3,1,3,2,4,1,4,1],
-// [2,3,3,1,4,3,4,4],
-// [3,3,3,1,2,4,4,2],
-// [1,4,3,4,1,2,4,4],
-// [2,2,1,2,4,3,3,3],
-// [2,1,1,1,1,1,2,3],
-// [2,1,1,1,1,2,2,2],
-// ]
-// grid = grid.map((row,y)=>{
-//   return row.map((it,x)=>{
-//     return box_block(it, x, y)
-//   })
-// })
+grid = [
+[3,1,3,3,2,1,4,2],
+[3,1,3,2,4,1,4,1],
+[2,3,3,1,4,3,4,4],
+[3,3,3,1,2,4,4,2],
+[1,4,3,4,1,2,4,4],
+[2,2,1,2,4,3,3,3],
+[2,1,1,1,1,1,2,3],
+[2,1,1,1,1,2,2,2],
+]
+grid = grid.map((row,y)=>{
+  return row.map((it,x)=>{
+    return box_block(it, x, y)
+  })
+})
 log_grid(grid, 'val')
 
 function log_grid(grd, key='val') {
@@ -564,20 +564,27 @@ function player_click(item) {
 }
 
 
-function button_click() {
-  var allval = distinct(grid)
-  log(allval)
-  var matches = []
-  for (var i in allval) {
-    var val = allval[i]
-    var matched = checkall(val)
-    matches.push(matched)
-    logmatch(matched, val)
+var matches = []
+function button_click(tag) {
+  if (tag==1) {
+    var allval = distinct(grid)
+    log(allval)
+    matches = []
+    for (var i in allval) {
+      var val = allval[i]
+      var matched = checkall(val)
+      matches.push(matched)
+      logmatch(matched, val)
+    }
   }
-
-  clear_match(matches)
-  do {
-    var rt = fall_items()
-  }while(!rt)
+  if (tag == 2) {
+    clear_match(matches)
+  }
+  if (tag == 3) {
+    fall_items()
+  }
+  // do {
+  //   var rt = fall_items()
+  // }while(!rt)
   log_grid(grid, 'val')
 }
