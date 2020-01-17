@@ -1,6 +1,6 @@
 var grid = []
 var dirs = []// 格子补齐的方向，经典玩法是向下的
-var val_max = 3// 格子种类总数
+var val_max = 4// 格子种类总数
 const Status = {
   empty:    0,//空白，等待填充新的方块
   filling:  1,//填充，初始化或消除后会填充
@@ -96,21 +96,21 @@ function create_dirs(w, h) {
 
 grid = create_grid(8, 8, val_max)
 dirs = create_dirs(8, 8)
-grid = [
-[3,1,3,3,2,1,4,2],
-[3,1,3,2,4,1,4,1],
-[2,3,3,1,4,3,4,4],
-[3,3,3,1,2,4,4,2],
-[1,4,3,4,1,2,4,4],
-[2,2,1,2,4,3,3,3],
-[2,1,1,1,1,1,2,3],
-[2,1,1,1,1,2,2,2],
-]
-grid = grid.map((row,y)=>{
-  return row.map((it,x)=>{
-    return box_block(it, x, y)
-  })
-})
+// grid = [
+// [3,1,3,3,2,1,4,2],
+// [3,1,3,2,4,1,4,1],
+// [2,3,3,1,4,3,4,4],
+// [3,3,3,1,2,4,4,2],
+// [1,4,3,4,1,2,4,4],
+// [2,2,1,2,4,3,3,3],
+// [2,1,1,1,1,1,2,3],
+// [2,1,1,1,1,2,2,2],
+// ]
+// grid = grid.map((row,y)=>{
+//   return row.map((it,x)=>{
+//     return box_block(it, x, y)
+//   })
+// })
 log_grid(grid, 'val')
 
 function log_grid(grd, key='val') {
@@ -153,7 +153,6 @@ function log() {
     arr.push(it)
   }
   console.log(arr.join(' '))
-  // console.log()// print a \n
 }
 
 // 获取坐标(x,y)的格子
@@ -391,6 +390,7 @@ function clear_match(matches) {
       clear_one_match(match)
     }
   }
+  matches = []
 }
 
 function clear_one_match(match) {
@@ -423,10 +423,10 @@ function touch(item) {
     pos2 = item.pos
     var h = (pos1.y == pos2.y) && (Math.abs(pos1.x - pos2.x) == 1)
     var v = (pos1.x == pos2.x) && (Math.abs(pos1.y - pos2.y) == 1)
-    if (h) {
+    if (h && place1.val != item.val) {
       place2 = item
       items = [place1, place2]
-    } else if (v) {
+    } else if (v && place1.val != item.val) {
       place2 = item
       items = [place1, place2]
     } else {
@@ -442,8 +442,8 @@ function touch(item) {
 
 function exchange(a, b) {
   // 交换方块
-  grid[a.pos.y][a.pos.x] = b
-  grid[b.pos.y][b.pos.x] = a
+  grid[a.pos.y].splice(a.pos.x, 1, b)
+  grid[b.pos.y].splice(b.pos.x, 1, a)
   // 交换坐标
   var tmpos = a.pos
   a.pos = b.pos
@@ -519,7 +519,8 @@ function fall_items() {
       var x = cur.pos.x
       var y = cur.pos.y
       var item = box_block(random_val(), x, y)
-      grid[y][x] = item
+      // grid[y][x] = item
+      grid[y].splice(x, 1, item)
     }
   }
   return false
@@ -552,39 +553,69 @@ function get_color(val) {
   return color[val-1]
 }
 
+var exchanged = []
+
 function player_click(item) {
   var touches = touch(item)
   if (touches.length == 2) {
     exchange(touches[0], touches[1])
     place1 = null
     place2 = null
+    exchanged = [...touches]
     return true
   }
   return false
 }
 
 
-var matches = []
-function button_click(tag) {
-  if (tag==1) {
-    var allval = distinct(grid)
-    log(allval)
-    matches = []
-    for (var i in allval) {
-      var val = allval[i]
-      var matched = checkall(val)
-      matches.push(matched)
-      logmatch(matched, val)
+
+function revert_exchange() {
+    if (exchanged.length == 0) {
+      return
     }
-  }
-  if (tag == 2) {
-    clear_match(matches)
-  }
-  if (tag == 3) {
-    fall_items()
-  }
-  // do {
-  //   var rt = fall_items()
-  // }while(!rt)
-  log_grid(grid, 'val')
+    exchange(exchanged[0], exchanged[1])
+    exchanged = []
 }
+
+var matches = []
+function step1() {
+  var allval = distinct(grid)
+  // log(allval)
+  matches = []
+  for (var i in allval) {
+    var val = allval[i]
+    var matched = checkall(val)
+    matches.push(matched)
+    // logmatch(matched, val)
+  }
+}
+function step2() {
+  clear_match(matches)
+}
+
+function step3() {
+  do {
+    var rt = fall_items()
+  }while(!rt)
+}
+
+function auto() {
+  do{
+    step2()
+    step3()
+    step1()
+    var match_count = 0
+    for (var i in matches) {
+      match_count += matches[i].length
+    }
+    console.log(match_count)
+    if (match_count == 0) {
+      revert_exchange()
+    } else {
+      exchanged = []
+    }
+  } while(match_count)
+}
+
+
+auto()

@@ -46,15 +46,8 @@ function initVue() {
       },
       player_click: function(item) {
         if (player_click(item)) {
-          this.refresh()
+          auto()
         }
-      },
-      refresh: function() {
-        this.griddata = [...grid]
-      },
-      button_click: function() {
-        button_click()
-        this.refresh()
       },
     }
   })

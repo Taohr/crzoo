@@ -21,19 +21,11 @@
     <div class="grid">
       <div class="grid-row" v-for="row in griddata">
         <div class="grid-item" v-for="item in row" :style="{backgroundColor: get_color(item.val)}" @click="player_click(item)">
-          <!-- {{item.pow==1 ? 'x' : item.pow}} -->
-          {{item.st+item.pos.x-item.pos.x+item.pos.y-item.pos.y}}
+          {{item.pow==1 ? '' : item.pow}}
         </div>
       </div>
     </div>
   </div>
-  <!-- control -->
-  <div style="display: flex;">
-    <div style="width: 5em;" onclick="button_click(1)">check</div>
-    <div style="width: 5em; background-color: rgba(0,0,0,0)">  </div>
-    <div style="width: 5em;" onclick="button_click(2)">clear</div>
-    <div style="width: 5em; background-color: rgba(0,0,0,0)">  </div>
-    <div style="width: 5em;" onclick="button_click(3)">fill</div>
-  </div>
+  <div onclick="auto()" style="width:80px;height:30px;background-color: white;">click</div>
 </body>
 </html>
